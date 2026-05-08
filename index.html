@@ -151,9 +151,8 @@
         .inline-row .form-group { flex: 1; min-width: 160px; }
         hr.divider { border: none; border-top: 2px solid #eee; margin: 18px 0; }
         /* Sleep time inputs always stack on mobile */
-        .sleep-stack { overflow: hidden; }
         .sleep-stack .form-group { margin-bottom: 16px; }
-        .sleep-stack input[type="time"] { max-width: 100%; width: 100%; box-sizing: border-box; display: block; }
+        .sleep-stack input[type="time"] { width: 100%; box-sizing: border-box; display: block; max-width: 100%; -webkit-appearance: none; appearance: none; }
         @media (min-width: 601px) {
             .sleep-stack { display: flex; gap: 16px; }
             .sleep-stack .form-group { flex: 1; min-width: 0; }
@@ -177,7 +176,7 @@
     <p>Fill this out each evening before bed &#8212; it only takes a few minutes!</p>
 </div>
 
-<div class="help-box" id="help-box">
+<div class="help-box" id="help-box" style="display:none;">
     <h3>&#128214; Instructions &amp; Sharing</h3>
     <ul>
         <li>&#9989; <strong>Fill it out each evening</strong> &#8212; just check the boxes and type short answers</li>
@@ -215,7 +214,7 @@
     </p>
 </div>
 <div style="text-align:center; margin-bottom:16px;">
-    <span class="action-btn btn-export" id="show-help-btn" data-action="show-help" style="display:none;">&#128214; Instructions &amp; Sharing</span>
+    <span class="action-btn btn-export" id="show-help-btn" data-action="show-help" style="">&#128214; Instructions &amp; Sharing</span>
 </div>
 
 <div class="nav-bar">
@@ -502,7 +501,6 @@ var STORAGE_KEY = 'kjt_wellness_log';
 var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyXDnaWt6bo9AbebxA8Y1uTEctT3EdPFMM72I78IG9sfU--rW9EQ6EJNDFl0lffPUyV/exec';
 var currentDate = getTodayStr();
 var isSaving = false;
-var fetchedAll = false; /* true once we've fetched all records, not just last 50 */
 
 /* ===== EVENT DELEGATION ===== */
 var lastTouchTime = 0;
@@ -594,7 +592,6 @@ function fetchFromCloud(limit, callback) {
                         var result = JSON.parse(xhr.responseText);
                         if (result.status === 'ok' && Array.isArray(result.data)) {
                             mergeCloudData(result.data);
-                            if (!limit || result.data.length < limit) fetchedAll = true;
                         }
                     } catch(e) { /* parse error, ignore */ }
                 }
@@ -636,7 +633,7 @@ function mergeCloudData(cloudEntries) {
 function syncAfterAction() {
     /* Called after save or delete to refetch and stay in sync */
     setTimeout(function() {
-        fetchFromCloud(fetchedAll ? 9999 : 50, function() {
+        fetchFromCloud(50, function() {
             updateDateDisplay(); /* refresh current view with synced data */
         });
     }, 1500); /* small delay to let the Sheets write complete */
@@ -667,15 +664,6 @@ function changeDate(offset) {
     if (newDate > getTodayStr()) return;
     currentDate = newDate;
     updateDateDisplay();
-
-    /* If navigating beyond our local data, fetch all from cloud */
-    if (!fetchedAll) {
-        var data = getData();
-        var oldest = data.length > 0 ? data[0].date : getTodayStr();
-        if (currentDate <= oldest) {
-            fetchFromCloud(9999, function() { updateDateDisplay(); });
-        }
-    }
 }
 
 function goToToday() { currentDate = getTodayStr(); updateDateDisplay(); }
@@ -959,8 +947,10 @@ function renderHistory() {
 }
 
 function exportCSV() {
-    var data = getData();
-    if (data.length === 0) { showStatus('export-status', 'Nothing to export yet!', 'error'); return; }
+    /* Fetch all from cloud first, then export */
+    fetchFromCloud(9999, function() {
+        var data = getData();
+        if (data.length === 0) { showStatus('export-status', 'Nothing to export yet!', 'error'); return; }
     var headers = Object.keys(data[0]);
     var csv = headers.join(',') + '\n';
     for (var i = 0; i < data.length; i++) {
@@ -977,24 +967,29 @@ function exportCSV() {
     }
     downloadFile(csv, 'Wellness_Log.csv', 'text/csv');
     showStatus('export-status', 'Downloaded!', 'success');
+    });
 }
 
 function exportJSON() {
-    var data = getData();
-    if (data.length === 0) { showStatus('import-status', 'Nothing to export.', 'error'); return; }
-    downloadFile(JSON.stringify(data, null, 2), 'Wellness_Log.json', 'application/json');
-    showStatus('import-status', 'Backup downloaded.', 'success');
+    fetchFromCloud(9999, function() {
+        var data = getData();
+        if (data.length === 0) { showStatus('import-status', 'Nothing to export.', 'error'); return; }
+        downloadFile(JSON.stringify(data, null, 2), 'Wellness_Log.json', 'application/json');
+        showStatus('import-status', 'Backup downloaded.', 'success');
+    });
 }
 
 function copyToClipboard() {
-    var data = getData();
-    if (data.length === 0) { showStatus('export-status', 'Nothing to copy yet!', 'error'); return; }
-    var json = JSON.stringify(data, null, 2);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(json).then(function() {
-            showStatus('export-status', 'Copied! Paste into email or message.', 'success');
-        }, function() { fallbackCopy(json); });
-    } else { fallbackCopy(json); }
+    fetchFromCloud(9999, function() {
+        var data = getData();
+        if (data.length === 0) { showStatus('export-status', 'Nothing to copy yet!', 'error'); return; }
+        var json = JSON.stringify(data, null, 2);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(json).then(function() {
+                showStatus('export-status', 'Copied! Paste into email or message.', 'success');
+            }, function() { fallbackCopy(json); });
+        } else { fallbackCopy(json); }
+    });
 }
 
 function fallbackCopy(text) {
