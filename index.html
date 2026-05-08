@@ -365,7 +365,7 @@
         <div class="form-group">
             <label for="connection-notes">Who did I connect with or talk to today?</label>
             <div class="hint">Phone calls, visits, church, outings &#8212; any social connection counts!</div>
-            <input type="text" id="connection-notes" placeholder="Example: Talked to my daughter on the phone">
+            <input type="text" id="connection-notes" placeholder="Example: Had lunch with a friend.">
         </div>
     </div>
 
@@ -591,22 +591,14 @@ function mergeCloudData(cloudEntries) {
     var dateMap = {};
     /* Index local entries by date */
     for (var i = 0; i < local.length; i++) dateMap[local[i].date] = local[i];
-    /* Merge cloud entries - cloud wins for entries that have a last_updated */
+    /* Add any cloud entries we don't have locally */
     for (var j = 0; j < cloudEntries.length; j++) {
         var ce = cloudEntries[j];
         if (!ce.date) continue;
-        var existing = dateMap[ce.date];
-        if (!existing) {
-            /* New entry from cloud */
+        if (!dateMap[ce.date]) {
             dateMap[ce.date] = ce;
-        } else {
-            /* Cloud has this date too - use whichever has the newer last_updated */
-            var cloudTime = ce.last_updated ? new Date(ce.last_updated).getTime() : 0;
-            var localTime = existing.last_updated ? new Date(existing.last_updated).getTime() : 0;
-            if (cloudTime >= localTime || isNaN(localTime)) {
-                dateMap[ce.date] = ce;
-            }
         }
+        /* If we already have it locally, keep the local version (last save wins) */
     }
     /* Rebuild array */
     var merged = [];
@@ -688,9 +680,9 @@ function loadEntry(date) {
     if (entry) {
         var savedTime = entry.last_updated || '';
         if (savedTime) {
-            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + savedTime + '.</strong> To update, change anything and tap Save.';
+            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>Last saved on ' + savedTime + '.</strong> To update, change anything and tap Save.';
         } else {
-            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
+            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day has been saved.</strong> To update, change anything and tap Save.';
         }
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
@@ -822,7 +814,7 @@ function saveEntry() {
                 btn.textContent = '\u2705 SAVE THIS DAY';
                 btn.classList.remove('saving');
                 showStatus('save-status', '\u2705 Your data has been saved!', 'success');
-                document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
+                document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
                 document.getElementById('edit-notice').style.display = 'block';
                 document.getElementById('btn-delete-day').style.display = 'inline-block';
                 syncAfterAction();
@@ -834,7 +826,7 @@ function saveEntry() {
         btn.textContent = '\u2705 SAVE THIS DAY';
         btn.classList.remove('saving');
         showStatus('save-status', '\u2705 Saved to this device! Cloud sync will retry next time.', 'success');
-        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
+        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
     }
