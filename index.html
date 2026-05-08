@@ -628,15 +628,13 @@ function normalizeDate(raw) {
 
 function mergeCloudData(cloudEntries) {
     /* Cloud is the source of truth — replace local cache entirely */
-    var dateMap = {};
+    var result = [];
     for (var j = 0; j < cloudEntries.length; j++) {
         var ce = cloudEntries[j];
         if (!ce.date) continue;
         ce.date = normalizeDate(ce.date);
-        dateMap[ce.date] = ce;
+        result.push(ce);
     }
-    var result = [];
-    for (var d in dateMap) { if (dateMap.hasOwnProperty(d)) result.push(dateMap[d]); }
     saveDataLocal(result);
 }
 
