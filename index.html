@@ -998,7 +998,8 @@ function importJSON() {
     } catch(e) { showStatus('import-status', 'Something went wrong. Check the data.', 'error'); }
 }
 
-/* Initial load: show local data first, then sync from cloud */
+/* Google Sheets is the source of truth — clear local cache and rebuild from cloud on every load */
+localStorage.removeItem(STORAGE_KEY);
 updateDateDisplay();
 fetchFromCloud(50, function() {
     updateDateDisplay();
