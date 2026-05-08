@@ -868,6 +868,10 @@ function saveEntry() {
 
 function deleteSingleDay() {
     if (!confirm('Delete entry for ' + formatDate(currentDate) + '?\n\nThis will delete it from this device AND Google Sheets.')) return;
+
+    /* Show spinner */
+    document.getElementById('loading-overlay').style.display = 'flex';
+
     /* Delete locally */
     var data = getData();
     var newData = [];
@@ -882,11 +886,21 @@ function deleteSingleDay() {
         var xhr = new XMLHttpRequest();
         xhr.open('POST', SHEETS_URL, true);
         xhr.setRequestHeader('Content-Type', 'text/plain');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                /* Refetch from cloud, then hide spinner */
+                fetchFromCloud(50, function() {
+                    updateDateDisplay();
+                    document.getElementById('loading-overlay').style.display = 'none';
+                });
+            }
+        };
         xhr.send(JSON.stringify({ action: 'delete', date: currentDate }));
-    } catch(e) { /* best effort */ }
+    } catch(e) {
+        document.getElementById('loading-overlay').style.display = 'none';
+    }
 
     showStatus('save-status', 'Entry for ' + formatDate(currentDate) + ' has been deleted.', 'error');
-    syncAfterAction();
 }
 
 function showStatus(id, msg, type) {
