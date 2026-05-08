@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kay's Daily Wellness Tracker</title>
+    <title>My Daily Wellness Tracker</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
         body {
@@ -24,6 +24,7 @@
         .help-box h3 { margin: 0 0 8px 0; color: #7a6b00; font-size: 1.1em; }
         .help-box ul { margin: 4px 0 0 0; padding-left: 20px; }
         .help-box li { margin-bottom: 6px; }
+        .help-box hr { border: none; border-top: 2px solid #e6d84c; margin: 16px 0; }
         .nav-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         .tap-btn {
             padding: 14px 20px; border: 3px solid #2c5f8a; border-radius: 10px;
@@ -61,7 +62,7 @@
         select { -webkit-appearance: menulist; appearance: menulist; }
         input:focus, select:focus, textarea:focus { border-color: #2c5f8a; outline: none; background: white; }
         input[type="number"] { max-width: 180px; }
-        input[type="time"] { max-width: 180px; }
+        input[type="time"] { max-width: 100%; }
         select { max-width: 350px; }
         textarea { min-height: 100px; resize: vertical; }
         .check-item {
@@ -149,9 +150,11 @@
         .inline-row { display: flex; gap: 16px; flex-wrap: wrap; }
         .inline-row .form-group { flex: 1; min-width: 160px; }
         hr.divider { border: none; border-top: 2px solid #eee; margin: 18px 0; }
-        .cloud-badge {
-            background: #e6f9e6; border: 2px solid #90d090; border-radius: 8px;
-            padding: 10px 16px; text-align: center; margin-bottom: 16px; font-size: 0.95em; color: #1a7a1a;
+        /* Sleep time inputs always stack on mobile */
+        .sleep-stack .form-group { flex: 1 1 100%; min-width: 100%; }
+        @media (min-width: 601px) {
+            .sleep-stack { display: flex; gap: 16px; }
+            .sleep-stack .form-group { flex: 1; min-width: 160px; }
         }
         @media (max-width: 600px) {
             body { padding: 10px; font-size: 15px; }
@@ -168,14 +171,12 @@
 <body>
 
 <div class="app-header">
-    <h1>&#127807; Kay's Daily Wellness Tracker</h1>
+    <h1>&#127807; My Daily Wellness Tracker</h1>
     <p>Fill this out each evening before bed &#8212; it only takes a few minutes!</p>
 </div>
 
-<div class="cloud-badge">&#9989; Connected to Google Sheets &#8212; your data is saved securely to the cloud!</div>
-
 <div class="help-box" id="help-box">
-    <h3>&#128214; How to Use This (Read Me First!)</h3>
+    <h3>&#128214; Instructions &amp; Sharing</h3>
     <ul>
         <li>&#9989; <strong>Fill it out each evening</strong> &#8212; just check the boxes and type short answers</li>
         <li>&#9989; <strong>Today's date is already selected</strong> &#8212; start right away!</li>
@@ -184,18 +185,39 @@
         <li>&#9989; <strong>Your data saves to the cloud</strong> &#8212; your family can see it too</li>
         <li>&#9989; <strong>It's OK to skip questions</strong> &#8212; fill in what you can</li>
     </ul>
-    <p style="margin-top:10px;">
-        <span class="action-btn btn-clear" data-action="hide-help" style="display:inline-block;">Got it! Hide these instructions</span>
+    <hr>
+    <h3>&#128190; Share &amp; Back Up My Data</h3>
+    <p style="font-size:0.95em; color:#555; margin:0 0 12px 0;">Your data automatically saves to Google Sheets. Use these buttons to download a local copy or send it to someone.</p>
+    <div class="btn-row" style="margin-top:0;">
+        <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1em; padding:14px;">&#128196; Download for Excel</span>
+        <span class="action-btn btn-export" data-action="copy-data" style="flex:1; font-size:1em; padding:14px;">&#128203; Copy All My Data</span>
+    </div>
+    <div id="export-output" class="export-area"></div>
+    <div id="export-status" class="status-msg"></div>
+    <hr>
+    <h3>&#128229; Advanced (Get Help With This)</h3>
+    <p style="font-size:0.9em; color:#555; margin:0 0 8px 0;">Restore data from a backup or download a backup file. Ask your family for help with this.</p>
+    <textarea id="import-area" placeholder="Paste saved data here..." style="min-height:60px; font-size:0.95em;"></textarea>
+    <div class="btn-row" style="margin-top:8px;">
+        <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white; flex:1; font-size:0.95em; padding:12px;">&#128229; Restore</span>
+        <span class="action-btn btn-export" data-action="export-json" style="flex:1; font-size:0.95em; padding:12px;">&#128230; Download Backup</span>
+    </div>
+    <div id="import-status" class="status-msg"></div>
+    <hr>
+    <span class="action-btn btn-danger" data-action="delete-all" style="font-size:0.9em; padding:10px 16px; margin-top:4px;">&#128465;&#65039; Delete All Local Data</span>
+    <p style="font-size:0.8em; color:#999; margin:6px 0 0 0;">This only deletes data on this device. Google Sheet is not affected.</p>
+    <hr>
+    <p style="margin:0;">
+        <span class="action-btn btn-clear" data-action="hide-help" style="display:inline-block;">Got it! Hide this section</span>
     </p>
 </div>
 <div style="text-align:center; margin-bottom:16px;">
-    <span class="action-btn btn-export" id="show-help-btn" data-action="show-help" style="display:none;">&#128214; Show Instructions Again</span>
+    <span class="action-btn btn-export" id="show-help-btn" data-action="show-help" style="display:none;">&#128214; Instructions &amp; Sharing</span>
 </div>
 
 <div class="nav-bar">
     <span class="tap-btn active" id="nav-entry" data-action="nav" data-page="entry">&#128221; Fill Out My Day</span>
     <span class="tap-btn" id="nav-history" data-action="nav" data-page="history">&#128202; See My History</span>
-    <span class="tap-btn" id="nav-export" data-action="nav" data-page="export">&#128190; Share My Data</span>
 </div>
 
 <!-- ==================== ENTRY PAGE ==================== -->
@@ -210,9 +232,7 @@
             <span class="date-btn" data-action="next-day">Next Day &#9654;</span>
             <span class="date-btn today" data-action="go-today">&#10226; Go to Today</span>
         </div>
-        <div class="edit-notice" id="edit-notice">
-            &#128203; <strong>You already filled out this day!</strong> Your answers are loaded. Change anything and tap Save to update.
-        </div>
+        <div class="edit-notice" id="edit-notice"></div>
     </div>
 
     <div class="section">
@@ -318,7 +338,7 @@
 
     <div class="section">
         <div class="section-title">&#128564; My Sleep Last Night</div>
-        <div class="inline-row">
+        <div class="sleep-stack">
             <div class="form-group">
                 <label for="bedtime">What time did I go to bed?</label>
                 <input type="time" id="bedtime">
@@ -475,38 +495,6 @@
     </div>
 </div>
 
-<!-- ==================== EXPORT PAGE ==================== -->
-<div class="page" id="page-export">
-    <div class="section">
-        <div class="section-title">&#128190; Share My Data</div>
-        <div class="section-help">&#128161; Your data automatically saves to Google Sheets. Use these to download a local copy too.</div>
-        <div class="btn-row">
-            <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1.15em; padding:20px;">&#128196; Download for Excel</span>
-        </div>
-        <div class="btn-row">
-            <span class="action-btn btn-export" data-action="copy-data" style="flex:1; font-size:1.15em; padding:20px;">&#128203; Copy All My Data</span>
-        </div>
-        <div id="export-output" class="export-area"></div>
-        <div id="export-status" class="status-msg"></div>
-    </div>
-    <div class="section">
-        <div class="section-title">&#128229; Restore Saved Data</div>
-        <textarea id="import-area" placeholder="Paste saved data here (ask family for help)..." style="min-height:80px;"></textarea>
-        <div class="btn-row">
-            <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white;">&#128229; Restore This Data</span>
-            <span class="action-btn btn-export" data-action="export-json">&#128230; Download Backup</span>
-        </div>
-        <div id="import-status" class="status-msg"></div>
-    </div>
-    <div class="section">
-        <div class="section-title">&#9888;&#65039; Delete Local Data</div>
-        <div class="section-help">&#128680; This deletes data from THIS DEVICE only. Your Google Sheet data is not affected.</div>
-        <div class="btn-row">
-            <span class="action-btn btn-danger" data-action="delete-all">&#128465;&#65039; DELETE LOCAL DATA</span>
-        </div>
-    </div>
-</div>
-
 <!-- ==================== JAVASCRIPT ==================== -->
 <script>
 var STORAGE_KEY = 'kjt_wellness_log';
@@ -614,10 +602,9 @@ function changeDate(offset) {
     if (newDate > getTodayStr()) return;
     currentDate = newDate;
     updateDateDisplay();
-    window.scrollTo(0, 0);
 }
 
-function goToToday() { currentDate = getTodayStr(); updateDateDisplay(); window.scrollTo(0, 0); }
+function goToToday() { currentDate = getTodayStr(); updateDateDisplay(); }
 function goToDate(date) { currentDate = date; showPage('entry'); updateDateDisplay(); }
 
 /* ===== RATINGS ===== */
@@ -653,6 +640,8 @@ function loadEntry(date) {
     for (var i = 0; i < data.length; i++) { if (data[i].date === date) { entry = data[i]; break; } }
     clearFormSilent();
     if (entry) {
+        var savedTime = entry.last_updated || 'a previous session';
+        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + savedTime + '.</strong> To update, change anything and tap Save.';
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
         setVal('weight', entry.weight);
@@ -742,7 +731,8 @@ function buildEntry() {
         bowel_movement: cbVal('bowel-movement'), bowel_type: txtVal('bowel-type'),
         energy: numVal('energy'), mental_clarity: numVal('clarity'),
         mood: numVal('mood'), word_finding: txtVal('word-finding'),
-        notes: txtVal('notes')
+        notes: txtVal('notes'),
+        last_updated: new Date().toLocaleString()
     };
 }
 
@@ -755,7 +745,7 @@ function saveEntry() {
 
     var entry = buildEntry();
 
-    /* Save locally first */
+    /* Save locally */
     var data = getData();
     var idx = -1;
     for (var i = 0; i < data.length; i++) { if (data[i].date === currentDate) { idx = i; break; } }
@@ -773,14 +763,10 @@ function saveEntry() {
                 isSaving = false;
                 btn.textContent = '\u2705 SAVE THIS DAY';
                 btn.classList.remove('saving');
-                if (xhr.status === 200 || xhr.status === 302 || xhr.status === 0) {
-                    showStatus('save-status', 'Saved! Entry for ' + formatDate(currentDate) + ' saved to your device AND Google Sheets.', 'success');
-                } else {
-                    showStatus('save-status', 'Saved locally! But could not reach Google Sheets. It will sync next time.', 'error');
-                }
+                showStatus('save-status', '\u2705 Your data has been saved!', 'success');
+                document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
                 document.getElementById('edit-notice').style.display = 'block';
                 document.getElementById('btn-delete-day').style.display = 'inline-block';
-                window.scrollTo(0, 0);
             }
         };
         xhr.send(JSON.stringify(entry));
@@ -788,18 +774,16 @@ function saveEntry() {
         isSaving = false;
         btn.textContent = '\u2705 SAVE THIS DAY';
         btn.classList.remove('saving');
-        showStatus('save-status', 'Saved locally! Google Sheets sync failed but your data is safe on this device.', 'error');
+        showStatus('save-status', '\u2705 Saved to this device! Cloud sync will retry next time.', 'success');
+        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
-        window.scrollTo(0, 0);
     }
 }
 
-/* Note: Google Apps Script redirects POST requests, so XHR may report status 0.
-   That's normal and means it worked. The Apps Script handles the data. */
-
 function deleteSingleDay() {
-    if (!confirm('Delete entry for ' + formatDate(currentDate) + '?')) return;
+    if (!confirm('Delete entry for ' + formatDate(currentDate) + '?\n\nThis will delete it from this device AND Google Sheets.')) return;
+    /* Delete locally */
     var data = getData();
     var newData = [];
     for (var i = 0; i < data.length; i++) { if (data[i].date !== currentDate) newData.push(data[i]); }
@@ -807,14 +791,23 @@ function deleteSingleDay() {
     clearFormSilent();
     document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('btn-delete-day').style.display = 'none';
-    showStatus('save-status', 'Entry deleted from this device. (Google Sheet row remains &#8212; delete it there manually if needed.)', 'error');
+
+    /* Delete from Google Sheets */
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', SHEETS_URL, true);
+        xhr.setRequestHeader('Content-Type', 'text/plain');
+        xhr.send(JSON.stringify({ action: 'delete', date: currentDate }));
+    } catch(e) { /* best effort */ }
+
+    showStatus('save-status', 'Entry for ' + formatDate(currentDate) + ' has been deleted.', 'error');
 }
 
 function showStatus(id, msg, type) {
     var el = document.getElementById(id);
     el.innerHTML = msg;
     el.className = 'status-msg show ' + type;
-    setTimeout(function() { el.classList.remove('show'); }, 8000);
+    setTimeout(function() { el.classList.remove('show'); }, 6000);
 }
 
 function clearFormSilent() {
@@ -890,14 +883,14 @@ function exportCSV() {
         }
         csv += cols.join(',') + '\n';
     }
-    downloadFile(csv, 'Kay_Wellness_Log.csv', 'text/csv');
+    downloadFile(csv, 'Wellness_Log.csv', 'text/csv');
     showStatus('export-status', 'Downloaded!', 'success');
 }
 
 function exportJSON() {
     var data = getData();
     if (data.length === 0) { showStatus('import-status', 'Nothing to export.', 'error'); return; }
-    downloadFile(JSON.stringify(data, null, 2), 'Kay_Wellness_Log.json', 'application/json');
+    downloadFile(JSON.stringify(data, null, 2), 'Wellness_Log.json', 'application/json');
     showStatus('import-status', 'Backup downloaded.', 'success');
 }
 
