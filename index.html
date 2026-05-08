@@ -151,7 +151,8 @@
         .inline-row .form-group { flex: 1; min-width: 160px; }
         hr.divider { border: none; border-top: 2px solid #eee; margin: 18px 0; }
         /* Sleep time inputs always stack on mobile */
-        .sleep-stack .form-group { flex: 1 1 100%; min-width: 100%; }
+        .sleep-stack .form-group { flex: 1 1 100%; min-width: 0; }
+        .sleep-stack input[type="time"] { max-width: 100%; width: 100%; }
         @media (min-width: 601px) {
             .sleep-stack { display: flex; gap: 16px; }
             .sleep-stack .form-group { flex: 1; min-width: 160px; }
@@ -186,26 +187,30 @@
         <li>&#9989; <strong>It's OK to skip questions</strong> &#8212; fill in what you can</li>
     </ul>
     <hr>
-    <h3>&#128190; Share &amp; Back Up My Data</h3>
-    <p style="font-size:0.95em; color:#555; margin:0 0 12px 0;">Your data automatically saves to Google Sheets. Use these buttons to download a local copy or send it to someone.</p>
-    <div class="btn-row" style="margin-top:0;">
-        <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1em; padding:14px;">&#128196; Download for Excel</span>
-        <span class="action-btn btn-export" data-action="copy-data" style="flex:1; font-size:1em; padding:14px;">&#128203; Copy All My Data</span>
+    <p style="margin:0;">
+        <span class="action-btn btn-export" data-action="toggle-share" style="display:inline-block;">&#128190; Share &amp; Back Up My Data</span>
+    </p>
+    <div id="share-panel" style="display:none; margin-top:14px;">
+        <p style="font-size:0.95em; color:#555; margin:0 0 12px 0;">Your data automatically saves to Google Sheets. Use these buttons to download a local copy or send it to someone.</p>
+        <div class="btn-row" style="margin-top:0;">
+            <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1em; padding:14px;">&#128196; Download for Excel</span>
+            <span class="action-btn btn-export" data-action="copy-data" style="flex:1; font-size:1em; padding:14px;">&#128203; Copy All My Data</span>
+        </div>
+        <div id="export-output" class="export-area"></div>
+        <div id="export-status" class="status-msg"></div>
+        <hr>
+        <h3 style="color:#7a6b00; font-size:1em;">&#128229; Advanced (Get Help With This)</h3>
+        <p style="font-size:0.9em; color:#555; margin:0 0 8px 0;">Restore data from a backup or download a backup file. Ask your family for help with this.</p>
+        <textarea id="import-area" placeholder="Paste saved data here..." style="min-height:60px; font-size:0.95em;"></textarea>
+        <div class="btn-row" style="margin-top:8px;">
+            <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white; flex:1; font-size:0.95em; padding:12px;">&#128229; Restore</span>
+            <span class="action-btn btn-export" data-action="export-json" style="flex:1; font-size:0.95em; padding:12px;">&#128230; Download Backup</span>
+        </div>
+        <div id="import-status" class="status-msg"></div>
+        <hr>
+        <span class="action-btn btn-danger" data-action="delete-all" style="font-size:0.9em; padding:10px 16px; margin-top:4px;">&#128465;&#65039; Delete All Local Data</span>
+        <p style="font-size:0.8em; color:#999; margin:6px 0 0 0;">This only deletes data on this device. Google Sheet is not affected.</p>
     </div>
-    <div id="export-output" class="export-area"></div>
-    <div id="export-status" class="status-msg"></div>
-    <hr>
-    <h3>&#128229; Advanced (Get Help With This)</h3>
-    <p style="font-size:0.9em; color:#555; margin:0 0 8px 0;">Restore data from a backup or download a backup file. Ask your family for help with this.</p>
-    <textarea id="import-area" placeholder="Paste saved data here..." style="min-height:60px; font-size:0.95em;"></textarea>
-    <div class="btn-row" style="margin-top:8px;">
-        <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white; flex:1; font-size:0.95em; padding:12px;">&#128229; Restore</span>
-        <span class="action-btn btn-export" data-action="export-json" style="flex:1; font-size:0.95em; padding:12px;">&#128230; Download Backup</span>
-    </div>
-    <div id="import-status" class="status-msg"></div>
-    <hr>
-    <span class="action-btn btn-danger" data-action="delete-all" style="font-size:0.9em; padding:10px 16px; margin-top:4px;">&#128465;&#65039; Delete All Local Data</span>
-    <p style="font-size:0.8em; color:#999; margin:6px 0 0 0;">This only deletes data on this device. Google Sheet is not affected.</p>
     <hr>
     <p style="margin:0;">
         <span class="action-btn btn-clear" data-action="hide-help" style="display:inline-block;">Got it! Hide this section</span>
@@ -479,10 +484,8 @@
     <div id="save-status" class="status-msg"></div>
 
     <div class="btn-row" style="margin-top:24px;">
-        <span class="action-btn btn-clear" data-action="clear-form">&#128465;&#65039; Clear Form</span>
         <span class="action-btn btn-delete-day" id="btn-delete-day" data-action="delete-day" style="display:none;">&#128465; Delete This Day</span>
     </div>
-    <p style="text-align:center; color:#999; font-size:0.85em;">(Clear Form only clears the screen &#8212; saved entries are safe)</p>
 </div>
 
 <!-- ==================== HISTORY PAGE ==================== -->
@@ -523,10 +526,10 @@ function handleAction(target) {
         case 'next-day': changeDate(1); break;
         case 'go-today': goToToday(); break;
         case 'save': saveEntry(); break;
-        case 'clear-form': clearForm(); break;
         case 'delete-day': deleteSingleDay(); break;
         case 'hide-help': hideHelp(); break;
         case 'show-help': showHelp(); break;
+        case 'toggle-share': toggleShare(); break;
         case 'rate': handleRatingTap(el); break;
         case 'export-csv': exportCSV(); break;
         case 'copy-data': copyToClipboard(); break;
@@ -640,8 +643,12 @@ function loadEntry(date) {
     for (var i = 0; i < data.length; i++) { if (data[i].date === date) { entry = data[i]; break; } }
     clearFormSilent();
     if (entry) {
-        var savedTime = entry.last_updated || 'a previous session';
-        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + savedTime + '.</strong> To update, change anything and tap Save.';
+        var savedTime = entry.last_updated || '';
+        if (savedTime) {
+            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + savedTime + '.</strong> To update, change anything and tap Save.';
+        } else {
+            document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
+        }
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
         setVal('weight', entry.weight);
@@ -732,8 +739,17 @@ function buildEntry() {
         energy: numVal('energy'), mental_clarity: numVal('clarity'),
         mood: numVal('mood'), word_finding: txtVal('word-finding'),
         notes: txtVal('notes'),
-        last_updated: new Date().toLocaleString()
+        last_updated: formatTimestamp()
     };
+}
+
+function formatTimestamp() {
+    var d = new Date();
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var h = d.getHours(); var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    var min = ('0' + d.getMinutes()).slice(-2);
+    return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' at ' + h + ':' + min + ' ' + ampm;
 }
 
 function saveEntry() {
@@ -825,10 +841,14 @@ function clearFormSilent() {
 }
 
 function clearForm() {
-    if (!confirm('Clear the form? Saved entries are still safe.')) return;
     clearFormSilent();
     document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('btn-delete-day').style.display = 'none';
+}
+
+function toggleShare() {
+    var panel = document.getElementById('share-panel');
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
 function hideHelp() {
