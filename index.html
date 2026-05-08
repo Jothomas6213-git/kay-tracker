@@ -824,7 +824,7 @@ function saveEntry() {
                 btn.textContent = '\u2705 SAVE THIS DAY';
                 btn.classList.remove('saving');
                 showStatus('save-status', '\u2705 Your data has been saved!', 'success');
-                document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
+                document.getElementById('edit-notice').innerHTML = '&#128203; <strong>Last saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
                 document.getElementById('edit-notice').style.display = 'block';
                 document.getElementById('btn-delete-day').style.display = 'inline-block';
                 syncAfterAction();
@@ -836,7 +836,7 @@ function saveEntry() {
         btn.textContent = '\u2705 SAVE THIS DAY';
         btn.classList.remove('saving');
         showStatus('save-status', '\u2705 Saved to this device! Cloud sync will retry next time.', 'success');
-        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved.</strong> To update, change anything and tap Save.';
+        document.getElementById('edit-notice').innerHTML = '&#128203; <strong>Last saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
         document.getElementById('edit-notice').style.display = 'block';
         document.getElementById('btn-delete-day').style.display = 'inline-block';
     }
@@ -1008,7 +1008,8 @@ function importJSON() {
     } catch(e) { showStatus('import-status', 'Something went wrong. Check the data.', 'error'); }
 }
 
-/* Load: fetch from cloud, then render, then hide spinner */
+/* Load: clear local cache, fetch from cloud, then render, then hide spinner */
+localStorage.removeItem(STORAGE_KEY);
 fetchFromCloud(50, function() {
     updateDateDisplay();
     document.getElementById('loading-overlay').style.display = 'none';
