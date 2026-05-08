@@ -58,11 +58,11 @@
         input[type="text"], input[type="number"], input[type="time"], select, textarea {
             width: 100%; padding: 14px 16px; border: 2px solid #ccc;
             border-radius: 8px; font-size: 1.1em; font-family: inherit; background: #fafafa;
+            box-sizing: border-box; max-width: 100%;
         }
         select { -webkit-appearance: menulist; appearance: menulist; }
         input:focus, select:focus, textarea:focus { border-color: #2c5f8a; outline: none; background: white; }
         input[type="number"] { max-width: 180px; }
-        input[type="time"] { max-width: 100%; }
         select { max-width: 350px; }
         textarea { min-height: 100px; resize: vertical; }
         .check-item {
@@ -151,11 +151,12 @@
         .inline-row .form-group { flex: 1; min-width: 160px; }
         hr.divider { border: none; border-top: 2px solid #eee; margin: 18px 0; }
         /* Sleep time inputs always stack on mobile */
-        .sleep-stack .form-group { flex: 1 1 100%; min-width: 0; }
-        .sleep-stack input[type="time"] { max-width: 100%; width: 100%; }
+        .sleep-stack { overflow: hidden; }
+        .sleep-stack .form-group { margin-bottom: 16px; }
+        .sleep-stack input[type="time"] { max-width: 100%; width: 100%; box-sizing: border-box; display: block; }
         @media (min-width: 601px) {
             .sleep-stack { display: flex; gap: 16px; }
-            .sleep-stack .form-group { flex: 1; min-width: 160px; }
+            .sleep-stack .form-group { flex: 1; min-width: 0; }
         }
         @media (max-width: 600px) {
             body { padding: 10px; font-size: 15px; }
@@ -207,9 +208,6 @@
             <span class="action-btn btn-export" data-action="export-json" style="flex:1; font-size:0.95em; padding:12px;">&#128230; Download Backup</span>
         </div>
         <div id="import-status" class="status-msg"></div>
-        <hr>
-        <span class="action-btn btn-danger" data-action="delete-all" style="font-size:0.9em; padding:10px 16px; margin-top:4px;">&#128465;&#65039; Delete All Local Data</span>
-        <p style="font-size:0.8em; color:#999; margin:6px 0 0 0;">This only deletes data on this device. Google Sheet is not affected.</p>
     </div>
     <hr>
     <p style="margin:0;">
@@ -504,6 +502,7 @@ var STORAGE_KEY = 'kjt_wellness_log';
 var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyXDnaWt6bo9AbebxA8Y1uTEctT3EdPFMM72I78IG9sfU--rW9EQ6EJNDFl0lffPUyV/exec';
 var currentDate = getTodayStr();
 var isSaving = false;
+var fetchedAll = false; /* true once we've fetched all records, not just last 50 */
 
 /* ===== EVENT DELEGATION ===== */
 var lastTouchTime = 0;
@@ -535,7 +534,6 @@ function handleAction(target) {
         case 'copy-data': copyToClipboard(); break;
         case 'export-json': exportJSON(); break;
         case 'import-json': importJSON(); break;
-        case 'delete-all': deleteAllEntries(); break;
         case 'go-to-date': goToDate(el.getAttribute('data-date')); break;
     }
 }
@@ -565,7 +563,10 @@ function getData() {
     try { var raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
     catch(e) { return []; }
 }
-function saveDataLocal(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+function saveDataLocal(data) {
+    data.sort(function(a, b) { return a.date.localeCompare(b.date); });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
 
 function getTodayStr() {
     var now = new Date();
@@ -578,6 +579,67 @@ function formatDate(dateStr) {
     var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+/* ===== CLOUD SYNC ===== */
+function fetchFromCloud(limit, callback) {
+    try {
+        var url = SHEETS_URL + '?action=fetch&limit=' + (limit || 50);
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var result = JSON.parse(xhr.responseText);
+                        if (result.status === 'ok' && Array.isArray(result.data)) {
+                            mergeCloudData(result.data);
+                            if (!limit || result.data.length < limit) fetchedAll = true;
+                        }
+                    } catch(e) { /* parse error, ignore */ }
+                }
+                if (callback) callback();
+            }
+        };
+        xhr.send();
+    } catch(e) { if (callback) callback(); }
+}
+
+function mergeCloudData(cloudEntries) {
+    var local = getData();
+    var dateMap = {};
+    /* Index local entries by date */
+    for (var i = 0; i < local.length; i++) dateMap[local[i].date] = local[i];
+    /* Merge cloud entries - cloud wins for entries that have a last_updated */
+    for (var j = 0; j < cloudEntries.length; j++) {
+        var ce = cloudEntries[j];
+        if (!ce.date) continue;
+        var existing = dateMap[ce.date];
+        if (!existing) {
+            /* New entry from cloud */
+            dateMap[ce.date] = ce;
+        } else {
+            /* Cloud has this date too - use whichever has the newer last_updated */
+            var cloudTime = ce.last_updated ? new Date(ce.last_updated).getTime() : 0;
+            var localTime = existing.last_updated ? new Date(existing.last_updated).getTime() : 0;
+            if (cloudTime >= localTime || isNaN(localTime)) {
+                dateMap[ce.date] = ce;
+            }
+        }
+    }
+    /* Rebuild array */
+    var merged = [];
+    for (var d in dateMap) { if (dateMap.hasOwnProperty(d)) merged.push(dateMap[d]); }
+    saveDataLocal(merged);
+}
+
+function syncAfterAction() {
+    /* Called after save or delete to refetch and stay in sync */
+    setTimeout(function() {
+        fetchFromCloud(fetchedAll ? 9999 : 50, function() {
+            updateDateDisplay(); /* refresh current view with synced data */
+        });
+    }, 1500); /* small delay to let the Sheets write complete */
 }
 
 /* ===== NAVIGATION ===== */
@@ -605,6 +667,15 @@ function changeDate(offset) {
     if (newDate > getTodayStr()) return;
     currentDate = newDate;
     updateDateDisplay();
+
+    /* If navigating beyond our local data, fetch all from cloud */
+    if (!fetchedAll) {
+        var data = getData();
+        var oldest = data.length > 0 ? data[0].date : getTodayStr();
+        if (currentDate <= oldest) {
+            fetchFromCloud(9999, function() { updateDateDisplay(); });
+        }
+    }
 }
 
 function goToToday() { currentDate = getTodayStr(); updateDateDisplay(); }
@@ -766,7 +837,6 @@ function saveEntry() {
     var idx = -1;
     for (var i = 0; i < data.length; i++) { if (data[i].date === currentDate) { idx = i; break; } }
     if (idx >= 0) data[idx] = entry; else data.push(entry);
-    data.sort(function(a, b) { return a.date.localeCompare(b.date); });
     saveDataLocal(data);
 
     /* Save to Google Sheets */
@@ -783,6 +853,7 @@ function saveEntry() {
                 document.getElementById('edit-notice').innerHTML = '&#128203; <strong>This day\'s form has already been saved on ' + entry.last_updated + '.</strong> To update, change anything and tap Save.';
                 document.getElementById('edit-notice').style.display = 'block';
                 document.getElementById('btn-delete-day').style.display = 'inline-block';
+                syncAfterAction();
             }
         };
         xhr.send(JSON.stringify(entry));
@@ -817,6 +888,7 @@ function deleteSingleDay() {
     } catch(e) { /* best effort */ }
 
     showStatus('save-status', 'Entry for ' + formatDate(currentDate) + ' has been deleted.', 'error');
+    syncAfterAction();
 }
 
 function showStatus(id, msg, type) {
@@ -960,14 +1032,11 @@ function importJSON() {
     } catch(e) { showStatus('import-status', 'Something went wrong. Check the data.', 'error'); }
 }
 
-function deleteAllEntries() {
-    if (!confirm('DELETE ALL local entries?\n\nGoogle Sheet data is NOT affected.')) return;
-    if (!confirm('LAST CHANCE: Really delete?')) return;
-    saveDataLocal([]);
-    showStatus('export-status', 'Local data deleted.', 'error');
-}
-
+/* Initial load: show local data first, then sync from cloud */
 updateDateDisplay();
+fetchFromCloud(50, function() {
+    updateDateDisplay();
+});
 </script>
 
 </body>
