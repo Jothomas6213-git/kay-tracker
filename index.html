@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kay's Daily Wellness Tracker</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(0,0,0,0.1); }
+        body {
+            font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+            background: #f9fafe; color: #222; padding: 20px;
+            max-width: 750px; margin: 0 auto; font-size: 16px; line-height: 1.6;
+        }
+        .app-header {
+            background: #2c5f8a; color: white; padding: 20px 24px;
+            border-radius: 12px; text-align: center; margin-bottom: 20px;
+        }
+        .app-header h1 { font-size: 1.8em; margin: 0 0 4px 0; }
+        .app-header p { margin: 0; font-size: 1em; opacity: 0.9; }
+        .help-box {
+            background: #fffde6; border: 2px solid #e6d84c;
+            border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; font-size: 1em;
+        }
+        .help-box h3 { margin: 0 0 8px 0; color: #7a6b00; font-size: 1.1em; }
+        .help-box ul { margin: 4px 0 0 0; padding-left: 20px; }
+        .help-box li { margin-bottom: 6px; }
+        .nav-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tap-btn {
+            padding: 14px 20px; border: 3px solid #2c5f8a; border-radius: 10px;
+            cursor: pointer; font-size: 1.1em; font-weight: 700;
+            background: white; color: #2c5f8a; flex: 1; text-align: center;
+            min-width: 140px; display: inline-block;
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
+        }
+        .tap-btn.active { background: #2c5f8a; color: white; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .section {
+            background: white; border-radius: 12px; padding: 20px 24px;
+            margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e8eef5;
+        }
+        .section-title {
+            font-size: 1.3em; font-weight: 700; color: #2c5f8a;
+            border-bottom: 3px solid #e8f0f8; padding-bottom: 8px; margin-bottom: 16px;
+        }
+        .section-help {
+            background: #f0f7ff; border-radius: 6px; padding: 10px 14px;
+            font-size: 0.95em; color: #3a6a96; margin-bottom: 14px; line-height: 1.5;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; font-size: 1.05em; font-weight: 600;
+            margin-bottom: 4px; color: #333;
+        }
+        .form-group .hint { font-size: 0.9em; color: #777; margin-bottom: 6px; font-style: italic; }
+        input[type="text"], input[type="number"], input[type="time"], select, textarea {
+            width: 100%; padding: 14px 16px; border: 2px solid #ccc;
+            border-radius: 8px; font-size: 1.1em; font-family: inherit; background: #fafafa;
+        }
+        select { -webkit-appearance: menulist; appearance: menulist; }
+        input:focus, select:focus, textarea:focus { border-color: #2c5f8a; outline: none; background: white; }
+        input[type="number"] { max-width: 180px; }
+        input[type="time"] { max-width: 180px; }
+        select { max-width: 350px; }
+        textarea { min-height: 100px; resize: vertical; }
+        .check-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+            margin-bottom: 6px; border-radius: 8px; cursor: pointer; border: 2px solid transparent;
+        }
+        .check-item.checked { background: #e6f5e6; border-color: #90d090; }
+        .check-item input[type="checkbox"] {
+            width: 28px; height: 28px; min-width: 28px; min-height: 28px;
+            cursor: pointer; flex-shrink: 0;
+        }
+        .check-item span { font-size: 1.05em; cursor: pointer; flex: 1; }
+        .rating-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+        .rating-circle {
+            width: 52px; height: 52px; border: 3px solid #ccc; border-radius: 50%;
+            background: white; cursor: pointer; font-weight: bold; font-size: 1.3em;
+            display: flex; align-items: center; justify-content: center; color: #333;
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
+        }
+        .rating-circle.selected { background: #2c5f8a; color: white; border-color: #2c5f8a; }
+        .rating-labels { font-size: 0.9em; color: #666; margin-top: 6px; }
+        .save-btn {
+            padding: 22px 36px; border: none; border-radius: 10px; font-size: 1.4em;
+            font-weight: 700; cursor: pointer; font-family: inherit; width: 100%;
+            background: #1a7a1a; color: white; display: block; text-align: center;
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
+        }
+        .save-btn.saving { background: #999; }
+        .action-btn {
+            padding: 16px 28px; border: none; border-radius: 10px; font-size: 1.15em;
+            font-weight: 700; cursor: pointer; font-family: inherit; text-align: center;
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
+            display: inline-block;
+        }
+        .btn-clear { background: #f0f0f0; color: #555; border: 2px solid #ccc; }
+        .btn-export { background: #2c5f8a; color: white; }
+        .btn-danger { background: #cc3333; color: white; }
+        .btn-delete-day { background: #f5f5f5; color: #aa4444; border: 2px solid #dcc; }
+        .btn-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+        .btn-row .action-btn { flex: 1; min-width: 180px; }
+        .date-picker-section {
+            background: #e8f0f8; border-radius: 10px; padding: 18px 22px;
+            margin-bottom: 16px; border: 2px solid #b8d0e8;
+        }
+        .date-picker-section h3 { margin: 0 0 10px 0; color: #2c5f8a; font-size: 1.1em; }
+        .date-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .date-btn {
+            padding: 12px 18px; border: 2px solid #2c5f8a; border-radius: 8px;
+            background: white; color: #2c5f8a; font-size: 1.05em; font-weight: 600;
+            cursor: pointer; font-family: inherit; text-align: center;
+            -webkit-user-select: none; user-select: none; touch-action: manipulation;
+        }
+        .date-btn.today { background: #2c5f8a; color: white; }
+        .date-display {
+            font-size: 1.2em; font-weight: 700; color: #2c5f8a; padding: 10px 18px;
+            background: white; border-radius: 8px; border: 2px solid #2c5f8a;
+            min-width: 200px; text-align: center;
+        }
+        .edit-notice {
+            background: #f0f7ff; border: 2px solid #b8d0e8; border-radius: 8px;
+            padding: 12px 16px; margin-top: 12px; font-size: 1em; color: #2c5f8a; display: none;
+        }
+        .status-msg {
+            text-align: center; padding: 16px; border-radius: 10px; margin-top: 14px;
+            font-weight: 700; font-size: 1.15em; display: none;
+        }
+        .status-msg.show { display: block; }
+        .status-msg.success { background: #e6f9e6; color: #1a7a1a; border: 2px solid #90d090; }
+        .status-msg.error { background: #fce6e6; color: #cc3333; border: 2px solid #e8a0a0; }
+        .history-card {
+            background: white; border: 2px solid #e0e8f0; border-radius: 10px;
+            padding: 16px 20px; margin-bottom: 10px; cursor: pointer;
+            touch-action: manipulation; -webkit-user-select: none; user-select: none;
+        }
+        .history-card .date { font-weight: 700; font-size: 1.15em; color: #2c5f8a; }
+        .history-card .click-hint { font-size: 0.85em; color: #999; float: right; }
+        .history-card .summary { font-size: 0.95em; color: #555; margin-top: 6px; }
+        .history-card .summary span { margin-right: 16px; white-space: nowrap; }
+        .no-data { text-align: center; color: #888; padding: 30px; font-size: 1.1em; font-style: italic; }
+        .export-area {
+            background: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; padding: 14px;
+            margin-top: 14px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.8em;
+            max-height: 250px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; display: none;
+        }
+        .inline-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .inline-row .form-group { flex: 1; min-width: 160px; }
+        hr.divider { border: none; border-top: 2px solid #eee; margin: 18px 0; }
+        .cloud-badge {
+            background: #e6f9e6; border: 2px solid #90d090; border-radius: 8px;
+            padding: 10px 16px; text-align: center; margin-bottom: 16px; font-size: 0.95em; color: #1a7a1a;
+        }
+        @media (max-width: 600px) {
+            body { padding: 10px; font-size: 15px; }
+            .app-header h1 { font-size: 1.4em; }
+            .section { padding: 14px 16px; }
+            .rating-circle { width: 48px; height: 48px; font-size: 1.1em; }
+            .save-btn { padding: 18px 24px; font-size: 1.2em; }
+            .tap-btn { padding: 12px 14px; font-size: 1em; }
+            .date-nav { flex-direction: column; align-items: stretch; }
+            .date-btn, .date-display { text-align: center; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <h1>&#127807; Kay's Daily Wellness Tracker</h1>
+    <p>Fill this out each evening before bed &#8212; it only takes a few minutes!</p>
+</div>
+
+<div class="cloud-badge">&#9989; Connected to Google Sheets &#8212; your data is saved securely to the cloud!</div>
+
+<div class="help-box" id="help-box">
+    <h3>&#128214; How to Use This (Read Me First!)</h3>
+    <ul>
+        <li>&#9989; <strong>Fill it out each evening</strong> &#8212; just check the boxes and type short answers</li>
+        <li>&#9989; <strong>Today's date is already selected</strong> &#8212; start right away!</li>
+        <li>&#9989; <strong>To fix a previous day:</strong> Tap <strong>Previous Day</strong> to go back</li>
+        <li>&#9989; <strong>Tap the big green SAVE button</strong> at the bottom when done</li>
+        <li>&#9989; <strong>Your data saves to the cloud</strong> &#8212; your family can see it too</li>
+        <li>&#9989; <strong>It's OK to skip questions</strong> &#8212; fill in what you can</li>
+    </ul>
+    <p style="margin-top:10px;">
+        <span class="action-btn btn-clear" data-action="hide-help" style="display:inline-block;">Got it! Hide these instructions</span>
+    </p>
+</div>
+<div style="text-align:center; margin-bottom:16px;">
+    <span class="action-btn btn-export" id="show-help-btn" data-action="show-help" style="display:none;">&#128214; Show Instructions Again</span>
+</div>
+
+<div class="nav-bar">
+    <span class="tap-btn active" id="nav-entry" data-action="nav" data-page="entry">&#128221; Fill Out My Day</span>
+    <span class="tap-btn" id="nav-history" data-action="nav" data-page="history">&#128202; See My History</span>
+    <span class="tap-btn" id="nav-export" data-action="nav" data-page="export">&#128190; Share My Data</span>
+</div>
+
+<!-- ==================== ENTRY PAGE ==================== -->
+<div class="page active" id="page-entry">
+
+    <div class="date-picker-section">
+        <h3>&#128197; Which day are you filling out?</h3>
+        <p style="font-size:0.9em; color:#555; margin:0 0 10px 0;">Use the arrows to go back and update a previous day.</p>
+        <div class="date-nav">
+            <span class="date-btn" data-action="prev-day">&#9664; Previous Day</span>
+            <span class="date-display" id="date-display">Loading...</span>
+            <span class="date-btn" data-action="next-day">Next Day &#9654;</span>
+            <span class="date-btn today" data-action="go-today">&#10226; Go to Today</span>
+        </div>
+        <div class="edit-notice" id="edit-notice">
+            &#128203; <strong>You already filled out this day!</strong> Your answers are loaded. Change anything and tap Save to update.
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#9878;&#65039; Weight</div>
+        <div class="section-help">&#128161; Weigh at the same time each day. Skip if you didn't weigh today.</div>
+        <div class="form-group">
+            <label for="weight">My weight today (in pounds):</label>
+            <input type="number" id="weight" step="0.1" placeholder="e.g. 135">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#127860;&#65039; What I Ate Today</div>
+        <div class="section-help">&#128161; Check each meal you ate. Type a short description if you can.</div>
+        <div class="check-item"><input type="checkbox" id="meal-breakfast"><span><strong>I ate Breakfast</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <div class="hint">What did you have?</div>
+            <input type="text" id="breakfast-desc" placeholder="Type what you ate...">
+        </div>
+        <div class="check-item"><input type="checkbox" id="meal-snack1"><span><strong>I had a Morning Snack</strong></span></div>
+        <div class="check-item"><input type="checkbox" id="meal-lunch"><span><strong>I ate Lunch</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <div class="hint">What did you have?</div>
+            <input type="text" id="lunch-desc" placeholder="Type what you ate...">
+        </div>
+        <div class="check-item"><input type="checkbox" id="meal-snack2"><span><strong>I had an Afternoon Snack</strong></span></div>
+        <div class="check-item"><input type="checkbox" id="meal-dinner"><span><strong>I ate Dinner</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <div class="hint">What did you have?</div>
+            <input type="text" id="dinner-desc" placeholder="Type what you ate...">
+        </div>
+        <hr class="divider">
+        <div class="form-group">
+            <label for="protein-drinks">How many protein drinks did I have today?</label>
+            <div class="hint">Goal: at least 2 per day. Type 0 if none.</div>
+            <input type="number" id="protein-drinks" min="0" max="5" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label for="water-glasses">How many glasses of water did I drink?</label>
+            <div class="hint">Goal: 8 or more. Coffee counts too!</div>
+            <input type="number" id="water-glasses" min="0" max="20" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label for="fruit-veg">How many servings of fruits or vegetables?</label>
+            <div class="hint">One serving = about a handful.</div>
+            <input type="number" id="fruit-veg" min="0" max="15" placeholder="0">
+        </div>
+        <div class="check-item"><input type="checkbox" id="healthy-fats"><span><strong>I had healthy fats today</strong> (olive oil, avocado, nuts, fish, coconut oil)</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128694;&#8205;&#9792;&#65039; Exercise &amp; Movement</div>
+        <div class="check-item"><input type="checkbox" id="walked"><span><strong>I went for a walk today</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <label for="walk-detail">How far or how long?</label>
+            <input type="text" id="walk-detail" placeholder="Example: 3 miles, or 45 minutes">
+        </div>
+        <div class="check-item"><input type="checkbox" id="strength"><span><strong>I did strength exercises</strong></span></div>
+        <div class="check-item"><input type="checkbox" id="balance"><span><strong>I did stretching, balance, or yoga</strong></span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#129504; Brain Training</div>
+        <div class="check-item"><input type="checkbox" id="brain-exercise"><span><strong>I did a brain exercise today</strong> (crossword, puzzle, Sudoku, BrainHQ)</span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <label for="brain-minutes">About how many minutes?</label>
+            <input type="number" id="brain-minutes" min="0" placeholder="0">
+        </div>
+        <div class="check-item"><input type="checkbox" id="reading"><span><strong>I read today</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <label for="reading-minutes">About how many minutes?</label>
+            <input type="number" id="reading-minutes" min="0" placeholder="0">
+        </div>
+        <div class="form-group">
+            <label for="new-activity">Did I try anything new or different today?</label>
+            <input type="text" id="new-activity" placeholder="Describe briefly (or leave blank)">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128138; My Medications</div>
+        <div class="section-help">&#128161; Check each one you took today. Green = checked!</div>
+        <div class="check-item"><input type="checkbox" id="med-valsartan"><span><strong>Valsartan 160 mg</strong> &#8212; blood pressure</span></div>
+        <div class="check-item"><input type="checkbox" id="med-flecainide"><span><strong>Flecainide 25 mg</strong> &#8212; heart rhythm</span></div>
+        <div class="check-item"><input type="checkbox" id="med-linzess"><span><strong>Linzess 72 mcg</strong> &#8212; constipation</span></div>
+        <div class="check-item"><input type="checkbox" id="med-methylcellulose"><span><strong>Methylcellulose (Citrucel)</strong> &#8212; fiber</span></div>
+        <div class="check-item"><input type="checkbox" id="med-lactulose-am"><span><strong>Lactulose &#8212; MORNING dose</strong> (30 mL)</span></div>
+        <div class="check-item"><input type="checkbox" id="med-lactulose-pm"><span><strong>Lactulose &#8212; EVENING dose</strong> (30 mL)</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#127793; My Supplements</div>
+        <div class="check-item"><input type="checkbox" id="sup-omega3"><span><strong>Omega-3 Fish Oil</strong> (DHA/EPA)</span></div>
+        <div class="check-item"><input type="checkbox" id="sup-vitd"><span><strong>Vitamin D3</strong></span></div>
+        <div class="check-item"><input type="checkbox" id="sup-b12"><span><strong>Vitamin B12</strong></span></div>
+        <div class="check-item"><input type="checkbox" id="sup-magnesium"><span><strong>Magnesium</strong> (take at bedtime)</span></div>
+        <div class="check-item"><input type="checkbox" id="sup-probiotic"><span><strong>Probiotic</strong></span></div>
+        <div class="form-group">
+            <label for="sup-other">Any other supplements?</label>
+            <input type="text" id="sup-other" placeholder="List any others, or leave blank">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128564; My Sleep Last Night</div>
+        <div class="inline-row">
+            <div class="form-group">
+                <label for="bedtime">What time did I go to bed?</label>
+                <input type="time" id="bedtime">
+            </div>
+            <div class="form-group">
+                <label for="waketime">What time did I wake up?</label>
+                <input type="time" id="waketime">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="hours-slept">About how many hours did I sleep?</label>
+            <input type="number" id="hours-slept" step="0.5" min="0" max="14" placeholder="e.g. 7">
+        </div>
+        <div class="form-group">
+            <label><strong>How well did I sleep?</strong> (tap a number)</label>
+            <div class="rating-row">
+                <div class="rating-circle" data-action="rate" data-field="sleep-quality" data-val="1">1</div>
+                <div class="rating-circle" data-action="rate" data-field="sleep-quality" data-val="2">2</div>
+                <div class="rating-circle" data-action="rate" data-field="sleep-quality" data-val="3">3</div>
+                <div class="rating-circle" data-action="rate" data-field="sleep-quality" data-val="4">4</div>
+                <div class="rating-circle" data-action="rate" data-field="sleep-quality" data-val="5">5</div>
+            </div>
+            <div class="rating-labels">1 = Terrible &nbsp;|&nbsp; 3 = OK &nbsp;|&nbsp; 5 = Wonderful!</div>
+        </div>
+        <input type="hidden" id="sleep-quality" value="">
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128591; Relaxation &amp; Connection</div>
+        <div class="check-item"><input type="checkbox" id="stress-activity"><span><strong>I took time to relax today</strong> (prayer, breathing, music, meditation)</span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <label for="stress-minutes">About how many minutes?</label>
+            <input type="number" id="stress-minutes" min="0" placeholder="0">
+        </div>
+        <div class="check-item"><input type="checkbox" id="social"><span><strong>I connected with someone today</strong></span></div>
+        <div class="form-group" style="padding-left:42px;">
+            <label for="social-detail">Who did I spend time with?</label>
+            <input type="text" id="social-detail" placeholder="Example: Talked to my daughter on the phone">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#10084;&#65039; Blood Pressure &amp; Pulse</div>
+        <div class="inline-row">
+            <div class="form-group">
+                <label for="bp-systolic">Top number (systolic):</label>
+                <input type="number" id="bp-systolic" placeholder="e.g. 130">
+            </div>
+            <div class="form-group">
+                <label for="bp-diastolic">Bottom number (diastolic):</label>
+                <input type="number" id="bp-diastolic" placeholder="e.g. 80">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="pulse">Pulse / heart rate:</label>
+            <input type="number" id="pulse" placeholder="e.g. 72">
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#129658; Digestive Health</div>
+        <div class="check-item"><input type="checkbox" id="bowel-movement"><span><strong>I had a bowel movement today</strong></span></div>
+        <div class="form-group">
+            <label for="bowel-type">What was it like?</label>
+            <select id="bowel-type">
+                <option value="">-- Pick the one that fits best --</option>
+                <option value="normal">Normal</option>
+                <option value="loose">Loose or watery</option>
+                <option value="hard">Hard or difficult to pass</option>
+                <option value="blowout">Urgent / unexpected</option>
+                <option value="none">I didn't go today</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128221; How Do I Feel Today?</div>
+        <div class="section-help">&#128161; Tap a number. 1 is worst, 5 is best.</div>
+        <div class="form-group">
+            <label><strong>My energy level today:</strong></label>
+            <div class="rating-row">
+                <div class="rating-circle" data-action="rate" data-field="energy" data-val="1">1</div>
+                <div class="rating-circle" data-action="rate" data-field="energy" data-val="2">2</div>
+                <div class="rating-circle" data-action="rate" data-field="energy" data-val="3">3</div>
+                <div class="rating-circle" data-action="rate" data-field="energy" data-val="4">4</div>
+                <div class="rating-circle" data-action="rate" data-field="energy" data-val="5">5</div>
+            </div>
+            <div class="rating-labels">1 = Exhausted &nbsp;&#8594;&nbsp; 5 = Full of energy!</div>
+        </div>
+        <input type="hidden" id="energy" value="">
+        <hr class="divider">
+        <div class="form-group">
+            <label><strong>My thinking / mental clarity today:</strong></label>
+            <div class="rating-row">
+                <div class="rating-circle" data-action="rate" data-field="clarity" data-val="1">1</div>
+                <div class="rating-circle" data-action="rate" data-field="clarity" data-val="2">2</div>
+                <div class="rating-circle" data-action="rate" data-field="clarity" data-val="3">3</div>
+                <div class="rating-circle" data-action="rate" data-field="clarity" data-val="4">4</div>
+                <div class="rating-circle" data-action="rate" data-field="clarity" data-val="5">5</div>
+            </div>
+            <div class="rating-labels">1 = Very foggy &nbsp;&#8594;&nbsp; 5 = Sharp and clear!</div>
+        </div>
+        <input type="hidden" id="clarity" value="">
+        <hr class="divider">
+        <div class="form-group">
+            <label><strong>My mood today:</strong></label>
+            <div class="rating-row">
+                <div class="rating-circle" data-action="rate" data-field="mood" data-val="1">1</div>
+                <div class="rating-circle" data-action="rate" data-field="mood" data-val="2">2</div>
+                <div class="rating-circle" data-action="rate" data-field="mood" data-val="3">3</div>
+                <div class="rating-circle" data-action="rate" data-field="mood" data-val="4">4</div>
+                <div class="rating-circle" data-action="rate" data-field="mood" data-val="5">5</div>
+            </div>
+            <div class="rating-labels">1 = Feeling low &nbsp;&#8594;&nbsp; 5 = Feeling great!</div>
+        </div>
+        <input type="hidden" id="mood" value="">
+        <hr class="divider">
+        <div class="form-group">
+            <label for="word-finding"><strong>Trouble finding the right words?</strong></label>
+            <select id="word-finding">
+                <option value="">-- Pick the one that fits --</option>
+                <option value="none">No trouble</option>
+                <option value="some">A little trouble</option>
+                <option value="a lot">A lot of trouble</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">&#128203; Anything Else I Want to Remember</div>
+        <textarea id="notes" placeholder="Examples:&#10;- Felt dizzy after lunch&#10;- Had a wonderful talk with my son&#10;- Want to ask doctor about shoulder pain"></textarea>
+    </div>
+
+    <div class="save-btn" id="save-btn" data-action="save">&#9989; SAVE THIS DAY</div>
+    <p style="text-align:center; color:#666; margin-top:8px; font-size:0.9em;">
+        &#8593; Tap this green button when done &#8593;
+    </p>
+    <div id="save-status" class="status-msg"></div>
+
+    <div class="btn-row" style="margin-top:24px;">
+        <span class="action-btn btn-clear" data-action="clear-form">&#128465;&#65039; Clear Form</span>
+        <span class="action-btn btn-delete-day" id="btn-delete-day" data-action="delete-day" style="display:none;">&#128465; Delete This Day</span>
+    </div>
+    <p style="text-align:center; color:#999; font-size:0.85em;">(Clear Form only clears the screen &#8212; saved entries are safe)</p>
+</div>
+
+<!-- ==================== HISTORY PAGE ==================== -->
+<div class="page" id="page-history">
+    <div class="section">
+        <div class="section-title">&#128202; My Logged Days</div>
+        <div class="section-help">&#128161; Tap any day to see or change it.</div>
+        <div id="history-count" style="text-align:center; color:#555; margin-bottom:14px; font-weight:600; font-size:1.1em;"></div>
+        <div id="history-list"></div>
+    </div>
+</div>
+
+<!-- ==================== EXPORT PAGE ==================== -->
+<div class="page" id="page-export">
+    <div class="section">
+        <div class="section-title">&#128190; Share My Data</div>
+        <div class="section-help">&#128161; Your data automatically saves to Google Sheets. Use these to download a local copy too.</div>
+        <div class="btn-row">
+            <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1.15em; padding:20px;">&#128196; Download for Excel</span>
+        </div>
+        <div class="btn-row">
+            <span class="action-btn btn-export" data-action="copy-data" style="flex:1; font-size:1.15em; padding:20px;">&#128203; Copy All My Data</span>
+        </div>
+        <div id="export-output" class="export-area"></div>
+        <div id="export-status" class="status-msg"></div>
+    </div>
+    <div class="section">
+        <div class="section-title">&#128229; Restore Saved Data</div>
+        <textarea id="import-area" placeholder="Paste saved data here (ask family for help)..." style="min-height:80px;"></textarea>
+        <div class="btn-row">
+            <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white;">&#128229; Restore This Data</span>
+            <span class="action-btn btn-export" data-action="export-json">&#128230; Download Backup</span>
+        </div>
+        <div id="import-status" class="status-msg"></div>
+    </div>
+    <div class="section">
+        <div class="section-title">&#9888;&#65039; Delete Local Data</div>
+        <div class="section-help">&#128680; This deletes data from THIS DEVICE only. Your Google Sheet data is not affected.</div>
+        <div class="btn-row">
+            <span class="action-btn btn-danger" data-action="delete-all">&#128465;&#65039; DELETE LOCAL DATA</span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+var STORAGE_KEY = 'kjt_wellness_log';
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyXDnaWt6bo9AbebxA8Y1uTEctT3EdPFMM72I78IG9sfU--rW9EQ6EJNDFl0lffPUyV/exec';
+var currentDate = getTodayStr();
+var isSaving = false;
+
+/* ===== EVENT DELEGATION ===== */
+var lastTouchTime = 0;
+
+function handleAction(target) {
+    var el = target;
+    var action = null;
+    while (el && el !== document.body) {
+        if (el.getAttribute && el.getAttribute('data-action')) {
+            action = el.getAttribute('data-action');
+            break;
+        }
+        el = el.parentElement;
+    }
+    if (!action) return;
+
+    switch (action) {
+        case 'nav': showPage(el.getAttribute('data-page')); break;
+        case 'prev-day': changeDate(-1); break;
+        case 'next-day': changeDate(1); break;
+        case 'go-today': goToToday(); break;
+        case 'save': saveEntry(); break;
+        case 'clear-form': clearForm(); break;
+        case 'delete-day': deleteSingleDay(); break;
+        case 'hide-help': hideHelp(); break;
+        case 'show-help': showHelp(); break;
+        case 'rate': handleRatingTap(el); break;
+        case 'export-csv': exportCSV(); break;
+        case 'copy-data': copyToClipboard(); break;
+        case 'export-json': exportJSON(); break;
+        case 'import-json': importJSON(); break;
+        case 'delete-all': deleteAllEntries(); break;
+        case 'go-to-date': goToDate(el.getAttribute('data-date')); break;
+    }
+}
+
+document.addEventListener('touchend', function(e) {
+    lastTouchTime = Date.now();
+    handleAction(e.target);
+}, false);
+
+document.addEventListener('click', function(e) {
+    if (Date.now() - lastTouchTime < 500) return;
+    handleAction(e.target);
+}, false);
+
+document.addEventListener('change', function(e) {
+    if (e.target.type === 'checkbox') {
+        var item = e.target.closest('.check-item');
+        if (item) {
+            if (e.target.checked) item.classList.add('checked');
+            else item.classList.remove('checked');
+        }
+    }
+}, false);
+
+/* ===== DATA ===== */
+function getData() {
+    try { var raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e) { return []; }
+}
+function saveDataLocal(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function getTodayStr() {
+    var now = new Date();
+    return now.getFullYear() + '-' + ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2);
+}
+
+function formatDate(dateStr) {
+    var parts = dateStr.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 12, 0, 0);
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+/* ===== NAVIGATION ===== */
+function showPage(page) {
+    var pages = document.querySelectorAll('.page');
+    var btns = document.querySelectorAll('.tap-btn');
+    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+    for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
+    document.getElementById('page-' + page).classList.add('active');
+    document.getElementById('nav-' + page).classList.add('active');
+    if (page === 'history') renderHistory();
+    window.scrollTo(0, 0);
+}
+
+function updateDateDisplay() {
+    document.getElementById('date-display').textContent = formatDate(currentDate);
+    loadEntry(currentDate);
+}
+
+function changeDate(offset) {
+    var parts = currentDate.split('-');
+    var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]), 12, 0, 0);
+    d.setDate(d.getDate() + offset);
+    var newDate = d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+    if (newDate > getTodayStr()) return;
+    currentDate = newDate;
+    updateDateDisplay();
+    window.scrollTo(0, 0);
+}
+
+function goToToday() { currentDate = getTodayStr(); updateDateDisplay(); window.scrollTo(0, 0); }
+function goToDate(date) { currentDate = date; showPage('entry'); updateDateDisplay(); }
+
+/* ===== RATINGS ===== */
+function handleRatingTap(el) {
+    var field = el.getAttribute('data-field');
+    var val = el.getAttribute('data-val');
+    document.getElementById(field).value = val;
+    var circles = el.parentElement.querySelectorAll('.rating-circle');
+    for (var i = 0; i < circles.length; i++) circles[i].classList.remove('selected');
+    el.classList.add('selected');
+}
+
+function setRating(field, value) {
+    document.getElementById(field).value = value;
+    var circles = document.querySelectorAll('.rating-circle[data-field="' + field + '"]');
+    for (var i = 0; i < circles.length; i++) {
+        circles[i].classList.remove('selected');
+        if (circles[i].getAttribute('data-val') === String(value)) circles[i].classList.add('selected');
+    }
+}
+
+function clearRatings() {
+    var fields = ['sleep-quality', 'energy', 'clarity', 'mood'];
+    for (var f = 0; f < fields.length; f++) document.getElementById(fields[f]).value = '';
+    var circles = document.querySelectorAll('.rating-circle');
+    for (var i = 0; i < circles.length; i++) circles[i].classList.remove('selected');
+}
+
+/* ===== LOAD ENTRY ===== */
+function loadEntry(date) {
+    var data = getData();
+    var entry = null;
+    for (var i = 0; i < data.length; i++) { if (data[i].date === date) { entry = data[i]; break; } }
+    clearFormSilent();
+    if (entry) {
+        document.getElementById('edit-notice').style.display = 'block';
+        document.getElementById('btn-delete-day').style.display = 'inline-block';
+        setVal('weight', entry.weight);
+        setCb('meal-breakfast', entry.breakfast); setVal('breakfast-desc', entry.breakfast_desc);
+        setCb('meal-snack1', entry.morning_snack);
+        setCb('meal-lunch', entry.lunch); setVal('lunch-desc', entry.lunch_desc);
+        setCb('meal-snack2', entry.afternoon_snack);
+        setCb('meal-dinner', entry.dinner); setVal('dinner-desc', entry.dinner_desc);
+        setVal('protein-drinks', entry.protein_drinks);
+        setVal('water-glasses', entry.water_glasses);
+        setVal('fruit-veg', entry.fruit_veg_servings);
+        setCb('healthy-fats', entry.healthy_fats);
+        setCb('walked', entry.walked); setVal('walk-detail', entry.walk_detail);
+        setCb('strength', entry.strength_training); setCb('balance', entry.balance_yoga);
+        setCb('brain-exercise', entry.brain_exercise); setVal('brain-minutes', entry.brain_minutes);
+        setCb('reading', entry.reading); setVal('reading-minutes', entry.reading_minutes);
+        setVal('new-activity', entry.new_activity);
+        setCb('med-valsartan', entry.med_valsartan); setCb('med-flecainide', entry.med_flecainide);
+        setCb('med-linzess', entry.med_linzess); setCb('med-methylcellulose', entry.med_methylcellulose);
+        setCb('med-lactulose-am', entry.med_lactulose_am); setCb('med-lactulose-pm', entry.med_lactulose_pm);
+        setCb('sup-omega3', entry.sup_omega3); setCb('sup-vitd', entry.sup_vitd);
+        setCb('sup-b12', entry.sup_b12); setCb('sup-magnesium', entry.sup_magnesium);
+        setCb('sup-probiotic', entry.sup_probiotic); setVal('sup-other', entry.sup_other);
+        setVal('bedtime', entry.bedtime); setVal('waketime', entry.waketime);
+        setVal('hours-slept', entry.hours_slept);
+        if (entry.sleep_quality) setRating('sleep-quality', entry.sleep_quality);
+        setCb('stress-activity', entry.stress_activity); setVal('stress-minutes', entry.stress_minutes);
+        setCb('social', entry.social_connection); setVal('social-detail', entry.social_detail);
+        setVal('bp-systolic', entry.bp_systolic); setVal('bp-diastolic', entry.bp_diastolic);
+        setVal('pulse', entry.pulse);
+        setCb('bowel-movement', entry.bowel_movement); setVal('bowel-type', entry.bowel_type);
+        if (entry.energy) setRating('energy', entry.energy);
+        if (entry.mental_clarity) setRating('clarity', entry.mental_clarity);
+        if (entry.mood) setRating('mood', entry.mood);
+        setVal('word-finding', entry.word_finding); setVal('notes', entry.notes);
+        updateAllCheckHighlights();
+    } else {
+        document.getElementById('edit-notice').style.display = 'none';
+        document.getElementById('btn-delete-day').style.display = 'none';
+    }
+}
+
+function updateAllCheckHighlights() {
+    var items = document.querySelectorAll('.check-item');
+    for (var i = 0; i < items.length; i++) {
+        var cb = items[i].querySelector('input[type="checkbox"]');
+        if (cb && cb.checked) items[i].classList.add('checked');
+        else items[i].classList.remove('checked');
+    }
+}
+
+function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = (v !== null && v !== undefined) ? v : ''; }
+function setCb(id, v) { var el = document.getElementById(id); if (el) el.checked = !!v; }
+function cbVal(id) { return document.getElementById(id).checked; }
+function txtVal(id) { return (document.getElementById(id).value || '').trim(); }
+function numVal(id) { var v = document.getElementById(id).value; return v === '' ? null : Number(v); }
+
+/* ===== SAVE ===== */
+function buildEntry() {
+    return {
+        date: currentDate,
+        weight: numVal('weight'),
+        breakfast: cbVal('meal-breakfast'), breakfast_desc: txtVal('breakfast-desc'),
+        morning_snack: cbVal('meal-snack1'),
+        lunch: cbVal('meal-lunch'), lunch_desc: txtVal('lunch-desc'),
+        afternoon_snack: cbVal('meal-snack2'),
+        dinner: cbVal('meal-dinner'), dinner_desc: txtVal('dinner-desc'),
+        protein_drinks: numVal('protein-drinks'), water_glasses: numVal('water-glasses'),
+        fruit_veg_servings: numVal('fruit-veg'), healthy_fats: cbVal('healthy-fats'),
+        walked: cbVal('walked'), walk_detail: txtVal('walk-detail'),
+        strength_training: cbVal('strength'), balance_yoga: cbVal('balance'),
+        brain_exercise: cbVal('brain-exercise'), brain_minutes: numVal('brain-minutes'),
+        reading: cbVal('reading'), reading_minutes: numVal('reading-minutes'),
+        new_activity: txtVal('new-activity'),
+        med_valsartan: cbVal('med-valsartan'), med_flecainide: cbVal('med-flecainide'),
+        med_linzess: cbVal('med-linzess'), med_methylcellulose: cbVal('med-methylcellulose'),
+        med_lactulose_am: cbVal('med-lactulose-am'), med_lactulose_pm: cbVal('med-lactulose-pm'),
+        sup_omega3: cbVal('sup-omega3'), sup_vitd: cbVal('sup-vitd'),
+        sup_b12: cbVal('sup-b12'), sup_magnesium: cbVal('sup-magnesium'),
+        sup_probiotic: cbVal('sup-probiotic'), sup_other: txtVal('sup-other'),
+        bedtime: txtVal('bedtime'), waketime: txtVal('waketime'),
+        hours_slept: numVal('hours-slept'), sleep_quality: numVal('sleep-quality'),
+        stress_activity: cbVal('stress-activity'), stress_minutes: numVal('stress-minutes'),
+        social_connection: cbVal('social'), social_detail: txtVal('social-detail'),
+        bp_systolic: numVal('bp-systolic'), bp_diastolic: numVal('bp-diastolic'),
+        pulse: numVal('pulse'),
+        bowel_movement: cbVal('bowel-movement'), bowel_type: txtVal('bowel-type'),
+        energy: numVal('energy'), mental_clarity: numVal('clarity'),
+        mood: numVal('mood'), word_finding: txtVal('word-finding'),
+        notes: txtVal('notes')
+    };
+}
+
+function saveEntry() {
+    if (isSaving) return;
+    isSaving = true;
+    var btn = document.getElementById('save-btn');
+    btn.textContent = 'Saving...';
+    btn.classList.add('saving');
+
+    var entry = buildEntry();
+
+    /* Save locally first */
+    var data = getData();
+    var idx = -1;
+    for (var i = 0; i < data.length; i++) { if (data[i].date === currentDate) { idx = i; break; } }
+    if (idx >= 0) data[idx] = entry; else data.push(entry);
+    data.sort(function(a, b) { return a.date.localeCompare(b.date); });
+    saveDataLocal(data);
+
+    /* Save to Google Sheets */
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', SHEETS_URL, true);
+        xhr.setRequestHeader('Content-Type', 'text/plain');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                isSaving = false;
+                btn.textContent = '\u2705 SAVE THIS DAY';
+                btn.classList.remove('saving');
+                if (xhr.status === 200 || xhr.status === 302 || xhr.status === 0) {
+                    showStatus('save-status', 'Saved! Entry for ' + formatDate(currentDate) + ' saved to your device AND Google Sheets.', 'success');
+                } else {
+                    showStatus('save-status', 'Saved locally! But could not reach Google Sheets. It will sync next time.', 'error');
+                }
+                document.getElementById('edit-notice').style.display = 'block';
+                document.getElementById('btn-delete-day').style.display = 'inline-block';
+                window.scrollTo(0, 0);
+            }
+        };
+        xhr.send(JSON.stringify(entry));
+    } catch(err) {
+        isSaving = false;
+        btn.textContent = '\u2705 SAVE THIS DAY';
+        btn.classList.remove('saving');
+        showStatus('save-status', 'Saved locally! Google Sheets sync failed but your data is safe on this device.', 'error');
+        document.getElementById('edit-notice').style.display = 'block';
+        document.getElementById('btn-delete-day').style.display = 'inline-block';
+        window.scrollTo(0, 0);
+    }
+}
+
+/* Note: Google Apps Script redirects POST requests, so XHR may report status 0.
+   That's normal and means it worked. The Apps Script handles the data. */
+
+function deleteSingleDay() {
+    if (!confirm('Delete entry for ' + formatDate(currentDate) + '?')) return;
+    var data = getData();
+    var newData = [];
+    for (var i = 0; i < data.length; i++) { if (data[i].date !== currentDate) newData.push(data[i]); }
+    saveDataLocal(newData);
+    clearFormSilent();
+    document.getElementById('edit-notice').style.display = 'none';
+    document.getElementById('btn-delete-day').style.display = 'none';
+    showStatus('save-status', 'Entry deleted from this device. (Google Sheet row remains &#8212; delete it there manually if needed.)', 'error');
+}
+
+function showStatus(id, msg, type) {
+    var el = document.getElementById(id);
+    el.innerHTML = msg;
+    el.className = 'status-msg show ' + type;
+    setTimeout(function() { el.classList.remove('show'); }, 8000);
+}
+
+function clearFormSilent() {
+    var cbs = document.querySelectorAll('#page-entry input[type="checkbox"]');
+    for (var i = 0; i < cbs.length; i++) cbs[i].checked = false;
+    var inputs = document.querySelectorAll('#page-entry input[type="text"], #page-entry input[type="number"], #page-entry input[type="time"]');
+    for (var j = 0; j < inputs.length; j++) inputs[j].value = '';
+    var selects = document.querySelectorAll('#page-entry select');
+    for (var k = 0; k < selects.length; k++) selects[k].selectedIndex = 0;
+    var textareas = document.querySelectorAll('#page-entry textarea');
+    for (var m = 0; m < textareas.length; m++) textareas[m].value = '';
+    var items = document.querySelectorAll('.check-item');
+    for (var n = 0; n < items.length; n++) items[n].classList.remove('checked');
+    clearRatings();
+}
+
+function clearForm() {
+    if (!confirm('Clear the form? Saved entries are still safe.')) return;
+    clearFormSilent();
+    document.getElementById('edit-notice').style.display = 'none';
+    document.getElementById('btn-delete-day').style.display = 'none';
+}
+
+function hideHelp() {
+    document.getElementById('help-box').style.display = 'none';
+    document.getElementById('show-help-btn').style.display = 'inline-block';
+}
+function showHelp() {
+    document.getElementById('help-box').style.display = 'block';
+    document.getElementById('show-help-btn').style.display = 'none';
+}
+
+function renderHistory() {
+    var data = getData();
+    var countEl = document.getElementById('history-count');
+    var listEl = document.getElementById('history-list');
+    countEl.textContent = data.length === 0 ? '' : 'You have logged ' + data.length + ' day' + (data.length > 1 ? 's' : '') + '!';
+    if (data.length === 0) {
+        listEl.innerHTML = '<div class="no-data">No days logged yet. Go to "Fill Out My Day" to start!</div>';
+        return;
+    }
+    var html = '';
+    var reversed = data.slice().reverse();
+    for (var i = 0; i < reversed.length; i++) {
+        var e = reversed[i];
+        var meals = (e.breakfast?1:0)+(e.morning_snack?1:0)+(e.lunch?1:0)+(e.afternoon_snack?1:0)+(e.dinner?1:0);
+        html += '<div class="history-card" data-action="go-to-date" data-date="' + e.date + '">';
+        html += '<div class="date">' + formatDate(e.date) + ' <span class="click-hint">Tap to edit</span></div>';
+        html += '<div class="summary">';
+        html += '<span>Weight: ' + (e.weight ? e.weight + ' lbs' : '---') + '</span>';
+        html += '<span>Meals: ' + meals + '/5</span>';
+        html += '<span>Walk: ' + (e.walked ? 'Yes' : '---') + '</span>';
+        html += '<span>Clarity: ' + (e.mental_clarity || '---') + '/5</span>';
+        html += '</div></div>';
+    }
+    listEl.innerHTML = html;
+}
+
+function exportCSV() {
+    var data = getData();
+    if (data.length === 0) { showStatus('export-status', 'Nothing to export yet!', 'error'); return; }
+    var headers = Object.keys(data[0]);
+    var csv = headers.join(',') + '\n';
+    for (var i = 0; i < data.length; i++) {
+        var row = data[i]; var cols = [];
+        for (var j = 0; j < headers.length; j++) {
+            var val = row[headers[j]];
+            if (val === null || val === undefined) val = '';
+            if (typeof val === 'boolean') val = val ? 'Yes' : 'No';
+            val = String(val);
+            if (val.indexOf(',') >= 0 || val.indexOf('"') >= 0 || val.indexOf('\n') >= 0) val = '"' + val.replace(/"/g, '""') + '"';
+            cols.push(val);
+        }
+        csv += cols.join(',') + '\n';
+    }
+    downloadFile(csv, 'Kay_Wellness_Log.csv', 'text/csv');
+    showStatus('export-status', 'Downloaded!', 'success');
+}
+
+function exportJSON() {
+    var data = getData();
+    if (data.length === 0) { showStatus('import-status', 'Nothing to export.', 'error'); return; }
+    downloadFile(JSON.stringify(data, null, 2), 'Kay_Wellness_Log.json', 'application/json');
+    showStatus('import-status', 'Backup downloaded.', 'success');
+}
+
+function copyToClipboard() {
+    var data = getData();
+    if (data.length === 0) { showStatus('export-status', 'Nothing to copy yet!', 'error'); return; }
+    var json = JSON.stringify(data, null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(json).then(function() {
+            showStatus('export-status', 'Copied! Paste into email or message.', 'success');
+        }, function() { fallbackCopy(json); });
+    } else { fallbackCopy(json); }
+}
+
+function fallbackCopy(text) {
+    document.getElementById('export-output').style.display = 'block';
+    document.getElementById('export-output').textContent = text;
+    showStatus('export-status', 'Data shown below. Select all and copy.', 'error');
+}
+
+function downloadFile(content, filename, type) {
+    var blob = new Blob([content], { type: type });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+    var raw = document.getElementById('import-area').value.trim();
+    if (!raw) { showStatus('import-status', 'Paste data first.', 'error'); return; }
+    try {
+        var imported = JSON.parse(raw);
+        if (!Array.isArray(imported)) throw new Error('bad');
+        var existing = getData(); var merged = existing.slice();
+        for (var i = 0; i < imported.length; i++) {
+            var entry = imported[i]; var found = false;
+            for (var j = 0; j < merged.length; j++) { if (merged[j].date === entry.date) { merged[j] = entry; found = true; break; } }
+            if (!found) merged.push(entry);
+        }
+        merged.sort(function(a, b) { return a.date.localeCompare(b.date); });
+        saveDataLocal(merged);
+        showStatus('import-status', 'Done! ' + merged.length + ' days.', 'success');
+        document.getElementById('import-area').value = '';
+    } catch(e) { showStatus('import-status', 'Something went wrong. Check the data.', 'error'); }
+}
+
+function deleteAllEntries() {
+    if (!confirm('DELETE ALL local entries?\n\nGoogle Sheet data is NOT affected.')) return;
+    if (!confirm('LAST CHANCE: Really delete?')) return;
+    saveDataLocal([]);
+    showStatus('export-status', 'Local data deleted.', 'error');
+}
+
+updateDateDisplay();
+</script>
+
+</body>
+</html>
