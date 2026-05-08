@@ -187,10 +187,7 @@
         <li>&#9989; <strong>It's OK to skip questions</strong> &#8212; fill in what you can</li>
     </ul>
     <hr>
-    <p style="margin:0;">
-        <span class="action-btn btn-export" data-action="toggle-share" style="display:inline-block;">&#128190; Share &amp; Back Up My Data</span>
-    </p>
-    <div id="share-panel" style="display:none; margin-top:14px;">
+    <h3 style="color:#7a6b00; font-size:1.1em;">&#128190; Share &amp; Back Up My Data</h3>
         <p style="font-size:0.95em; color:#555; margin:0 0 12px 0;">Your data automatically saves to Google Sheets. Use these buttons to download a local copy or send it to someone.</p>
         <div class="btn-row" style="margin-top:0;">
             <span class="action-btn btn-export" data-action="export-csv" style="flex:1; font-size:1em; padding:14px;">&#128196; Download for Excel</span>
@@ -198,7 +195,6 @@
         </div>
         <div id="export-output" class="export-area"></div>
         <div id="export-status" class="status-msg"></div>
-    </div>
     <hr>
     <p style="margin:0;">
         <span class="action-btn btn-clear" data-action="hide-help" style="display:inline-block;">Got it! Hide this section</span>
@@ -366,6 +362,11 @@
             <label for="stress-minutes">About how many minutes?</label>
             <input type="number" id="stress-minutes" min="0" placeholder="0">
         </div>
+        <div class="form-group">
+            <label for="connection-notes">Who did I connect with or talk to today?</label>
+            <div class="hint">Phone calls, visits, church, outings &#8212; any social connection counts!</div>
+            <input type="text" id="connection-notes" placeholder="Example: Talked to my daughter on the phone">
+        </div>
     </div>
 
     <div class="section">
@@ -510,7 +511,6 @@ function handleAction(target) {
         case 'delete-day': deleteSingleDay(); break;
         case 'hide-help': hideHelp(); break;
         case 'show-help': showHelp(); break;
-        case 'toggle-share': toggleShare(); break;
         case 'rate': handleRatingTap(el); break;
         case 'export-csv': exportCSV(); break;
         case 'copy-data': copyToClipboard(); break;
@@ -719,6 +719,7 @@ function loadEntry(date) {
         setVal('hours-slept', entry.hours_slept);
         if (entry.sleep_quality) setRating('sleep-quality', entry.sleep_quality);
         setCb('stress-activity', entry.stress_activity); setVal('stress-minutes', entry.stress_minutes);
+        setVal('connection-notes', entry.connection_notes);
         setVal('bp-systolic', entry.bp_systolic); setVal('bp-diastolic', entry.bp_diastolic);
         setVal('pulse', entry.pulse);
         setCb('bowel-movement', entry.bowel_movement); setVal('bowel-type', entry.bowel_type);
@@ -774,6 +775,7 @@ function buildEntry() {
         bedtime: txtVal('bedtime'), waketime: txtVal('waketime'),
         hours_slept: numVal('hours-slept'), sleep_quality: numVal('sleep-quality'),
         stress_activity: cbVal('stress-activity'), stress_minutes: numVal('stress-minutes'),
+        connection_notes: txtVal('connection-notes'),
         bp_systolic: numVal('bp-systolic'), bp_diastolic: numVal('bp-diastolic'),
         pulse: numVal('pulse'),
         bowel_movement: cbVal('bowel-movement'), bowel_type: txtVal('bowel-type'),
@@ -886,11 +888,6 @@ function clearForm() {
     clearFormSilent();
     document.getElementById('edit-notice').style.display = 'none';
     document.getElementById('btn-delete-day').style.display = 'none';
-}
-
-function toggleShare() {
-    var panel = document.getElementById('share-panel');
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
 function hideHelp() {
