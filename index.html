@@ -198,15 +198,6 @@
         </div>
         <div id="export-output" class="export-area"></div>
         <div id="export-status" class="status-msg"></div>
-        <hr>
-        <h3 style="color:#7a6b00; font-size:1em;">&#128229; Advanced (Get Help With This)</h3>
-        <p style="font-size:0.9em; color:#555; margin:0 0 8px 0;">Restore data from a backup or download a backup file. Ask your family for help with this.</p>
-        <textarea id="import-area" placeholder="Paste saved data here..." style="min-height:60px; font-size:0.95em;"></textarea>
-        <div class="btn-row" style="margin-top:8px;">
-            <span class="action-btn" data-action="import-json" style="background:#1a7a1a; color:white; flex:1; font-size:0.95em; padding:12px;">&#128229; Restore</span>
-            <span class="action-btn btn-export" data-action="export-json" style="flex:1; font-size:0.95em; padding:12px;">&#128230; Download Backup</span>
-        </div>
-        <div id="import-status" class="status-msg"></div>
     </div>
     <hr>
     <p style="margin:0;">
@@ -375,24 +366,17 @@
             <label for="stress-minutes">About how many minutes?</label>
             <input type="number" id="stress-minutes" min="0" placeholder="0">
         </div>
-        <div class="check-item"><input type="checkbox" id="social"><span><strong>I connected with someone today</strong></span></div>
-        <div class="form-group" style="padding-left:42px;">
-            <label for="social-detail">Who did I spend time with?</label>
-            <input type="text" id="social-detail" placeholder="Example: Talked to my daughter on the phone">
-        </div>
     </div>
 
     <div class="section">
         <div class="section-title">&#10084;&#65039; Blood Pressure &amp; Pulse</div>
-        <div class="inline-row">
-            <div class="form-group">
-                <label for="bp-systolic">Top number (systolic):</label>
-                <input type="number" id="bp-systolic" placeholder="e.g. 130">
-            </div>
-            <div class="form-group">
-                <label for="bp-diastolic">Bottom number (diastolic):</label>
-                <input type="number" id="bp-diastolic" placeholder="e.g. 80">
-            </div>
+        <div class="form-group">
+            <label for="bp-systolic">Top number (systolic):</label>
+            <input type="number" id="bp-systolic" placeholder="e.g. 130">
+        </div>
+        <div class="form-group">
+            <label for="bp-diastolic">Bottom number (diastolic):</label>
+            <input type="number" id="bp-diastolic" placeholder="e.g. 80">
         </div>
         <div class="form-group">
             <label for="pulse">Pulse / heart rate:</label>
@@ -735,7 +719,6 @@ function loadEntry(date) {
         setVal('hours-slept', entry.hours_slept);
         if (entry.sleep_quality) setRating('sleep-quality', entry.sleep_quality);
         setCb('stress-activity', entry.stress_activity); setVal('stress-minutes', entry.stress_minutes);
-        setCb('social', entry.social_connection); setVal('social-detail', entry.social_detail);
         setVal('bp-systolic', entry.bp_systolic); setVal('bp-diastolic', entry.bp_diastolic);
         setVal('pulse', entry.pulse);
         setCb('bowel-movement', entry.bowel_movement); setVal('bowel-type', entry.bowel_type);
@@ -791,7 +774,6 @@ function buildEntry() {
         bedtime: txtVal('bedtime'), waketime: txtVal('waketime'),
         hours_slept: numVal('hours-slept'), sleep_quality: numVal('sleep-quality'),
         stress_activity: cbVal('stress-activity'), stress_minutes: numVal('stress-minutes'),
-        social_connection: cbVal('social'), social_detail: txtVal('social-detail'),
         bp_systolic: numVal('bp-systolic'), bp_diastolic: numVal('bp-diastolic'),
         pulse: numVal('pulse'),
         bowel_movement: cbVal('bowel-movement'), bowel_type: txtVal('bowel-type'),
